@@ -1,4 +1,5 @@
 // SLAVE SPI
+// Arduino PRO MINI 3V3 8MHz
 #include <Arduino.h>
 #include <CRC16.h>
 #include <SPI.h>
