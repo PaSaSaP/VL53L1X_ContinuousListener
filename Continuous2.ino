@@ -14,6 +14,7 @@ long currentTime = 0;
 long sensorsCheckedTime = 0;
 long updateOutputDataTime = 0;
 bool keepSensorsDisabled = false;
+CRC16 crc;
 
 void startSensorMeasurement(uint8_t index) {
   sensors[index].sensor.setDistanceMode(VL53L1X::Short);
@@ -103,9 +104,7 @@ void readDistanceFromSensors() {
 }
 
 void updateOutputData() {
-  CRC16 crc;
-  crc.setPolynome(0x8005);
-  crc.setStartXOR(0xFFFF);
+  crc.restart();
   uint8_t oidx = 1 - dataOutputPicker;
   for (uint8_t i = 0; i < SensorCount; ++i) {
     output[oidx][i].lastValidCnt = sensors[i].lastValidCnt;
@@ -113,8 +112,8 @@ void updateOutputData() {
     output[oidx][i].status = sensors[i].status;
     crc.add(static_cast<uint8_t>(sensors[i].status));
     output[oidx][i].distance = sensors[i].distance;
-    crc.add(GET_LEFT_BYTE(sensors[i].distance));
     crc.add(GET_RIGHT_BYTE(sensors[i].distance));
+    crc.add(GET_LEFT_BYTE( sensors[i].distance));
   }
   sensorDataCrc[oidx] = crc.getCRC();
   dataOutputPicker = oidx;
@@ -164,6 +163,10 @@ void setup() {
 
   initSensors();
   initSpi();
+
+  // CRC-16/AUG-CCITT
+  crc.setPolynome(0x1021);
+  crc.setStartXOR(0x1D0F);
 }
 
 void loop() {
@@ -199,6 +202,8 @@ ISR(SPI_STC_vect) {        // SPI interrupt routine
       currentDataOutput = dataOutputPicker;
       requestDataOutputChange = true;
     }
+    request = ((uint8_t*)(output[currentDataOutput]))[request]; // the same byte order...
+    /*
     switch (request % 4) {
       case 0: {
         request = output[currentDataOutput][request / 4].lastValidCnt;
@@ -217,10 +222,11 @@ ISR(SPI_STC_vect) {        // SPI interrupt routine
         break;
       }
     }  // switch
+    */
   } else if (request < sizeof(output[0]) + 1) {
-    request = GET_LEFT_BYTE(sensorDataCrc[currentDataOutput]);
-  } else if (request < sizeof(output[0]) + 2) {
     request = GET_RIGHT_BYTE(sensorDataCrc[currentDataOutput]);
+  } else if (request < sizeof(output[0]) + 2) {
+    request = GET_LEFT_BYTE(sensorDataCrc[currentDataOutput]);
   } else {
     request = 0;
   }

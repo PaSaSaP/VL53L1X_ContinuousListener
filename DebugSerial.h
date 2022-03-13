@@ -1,7 +1,7 @@
 #ifndef DEBUG_SERIAL_H_
 #define DEBUG_SERIAL_H_
 
-#define ENABLE_DEBUG_SERIAL 1
+//#define ENABLE_DEBUG_SERIAL 1
 
 #if defined(ENABLE_DEBUG_SERIAL)
 #define xSerialBegin(baud) Serial.begin(baud)
