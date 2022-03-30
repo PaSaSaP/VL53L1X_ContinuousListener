@@ -1,4 +1,7 @@
 .project
 build/
+build-stm8sblue/
 .vscode/
 .*.swp
+.DS_Store
+
