@@ -2,10 +2,12 @@
 // stm8s103f3
 // without serial (-DNO_SERIAL) and analog input/output (-DNO_ANALOG_IN -DNO_ANALOG_OUT)
 // SPI NSS pin (alternate) need to be set by ST Visual Programmer
+// STM32CubeProg does support only STM32 boards as I know...
 #include <CRC16_c.h>
 #include <I2C_tiny.h>
 #include "SensorTypes.h"
 
+// PD1 == SWIM, use or not use?
 uint8_t const XshutPins[] = {PD4, PD5, PD6, PA1, PA2, PD3, PD2, PC4, PC3};
 
 long currentTime = 0;
@@ -122,6 +124,7 @@ void initSpi() {
   //  CLK_DeInit();
   //  CLK_PeripheralClockConfig(CLK_PERIPHERAL_SPI, ENABLE);
 
+  // It matches for example SdFat settings (MSB, CPO, CPH)
   SPI_DeInit();
   SPI_Init(SPI_FIRSTBIT_MSB, SPI_BAUDRATEPRESCALER_8, SPI_MODE_SLAVE,
            SPI_CLOCKPOLARITY_LOW, SPI_CLOCKPHASE_1EDGE,
@@ -162,6 +165,7 @@ void loop() {
 #endif
 
   currentTime = millis();
+  // read data from sensors every ~500ms
   if (!keepSensorsDisabled && currentTime - sensorsCheckedTime >= 500) {
     sensorsCheckedTime = currentTime;
 
@@ -169,11 +173,16 @@ void loop() {
     reinitSensorOnProblem();
     disableSensorsOnProblem();
   }
+  
+  // change output buffer
   if (requestDataOutputChange) {
     updateOutputData();
     requestDataOutputChange = false;
     updateOutputDataTime = currentTime;
   }
+
+  // if master doesn't request data for 5 seconds then shut down sensors
+  // maybe some sleep mode?
   if (currentTime - updateOutputDataTime > 5000) {
     if (!keepSensorsDisabled) {
       resetAndDisableSensors();
