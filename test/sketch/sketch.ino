@@ -41,7 +41,11 @@ void readSensorsData() {
   uint8_t* sensorBuff = reinterpret_cast<uint8_t*>(sensors);
   SPI.transfer(0x01);
   for (size_t i = 0x02; i <= sizeof(sensors) + 3; ++i) {
-    delayMicroseconds(10);
+    // Arduino as slave needed that delay to work in 2MHz and with that rather slow speed there were errors in 5% rate
+    // with low quality wire but!
+    // STM8S as slave with hardware interrupt worked without below delay at 8MHz (SPISettings(8000000, ...)) with 0% error rate
+    // and STM8S does not have I2C pins in random location on board...
+    // delayMicroseconds(10);
     r = SPI.transfer(i);
     if (i <= sizeof(sensors) + 1) {
       sensorBuff[i - 2] = r;
