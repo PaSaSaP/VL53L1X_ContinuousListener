@@ -45,6 +45,10 @@ void readSensorsData() {
     // with low quality wire but!
     // STM8S as slave with hardware interrupt worked without below delay at 8MHz (SPISettings(8000000, ...)) with 0% error rate
     // and STM8S does not have I2C pins in random location on board...
+    // update - first test was with pro mini 8MHz as master so it was 4MHz, not 8MHz and delay
+    // was not needed here;
+    // Now tested with STM32F401 72MHz and there is 4us delay with 9MHz SPI clock and CRC is OK;
+    // 3us delay makes CRC sometimes does not pass
     // delayMicroseconds(10);
     r = SPI.transfer(i);
     if (i <= sizeof(sensors) + 1) {
